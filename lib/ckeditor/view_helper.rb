@@ -21,28 +21,28 @@ module Ckeditor
       var ||= @template.instance_variable_get("@#{object}")
       
       value = var.send(field.to_sym) if var
-      value ||= options[:value] || ""
+      value ||= options.delete(:value) || ""
       
-      element_id = options[:id] || ckeditor_element_id(object, field)
+      element_id = options.delete(:id) || ckeditor_element_id(object, field, options[:index])
       
       textarea_options = { :id => element_id }
       
-      textarea_options[:cols] = options[:cols].nil? ? 70 : options[:cols].to_i
-      textarea_options[:rows] = options[:rows].nil? ? 20 : options[:rows].to_i
-      textarea_options[:class] = options[:class] unless options[:class].nil?
+      textarea_options[:cols] = (options.delete(:cols) || 70).to_i
+      textarea_options[:rows] = (options.delete(:rows) || 20).to_i
+      textarea_options[:class] = options.delete(:class) if options[:class]
 
-      width = options[:width].nil? ? '100%' : options[:width]
-      height = options[:height].nil? ? '100%' : options[:height]
+      width = options.delete(:width)
+      height = options.delete(:height)
       
       ckeditor_options = {}
       
-      ckeditor_options[:language] = options[:language] || I18n.locale.to_s
-      ckeditor_options[:toolbar]  = options[:toolbar] unless options[:toolbar].nil?
-      ckeditor_options[:skin]     = options[:skin]    unless options[:skin].nil?
-      ckeditor_options[:width]    = options[:width]   unless options[:width].nil?
-      ckeditor_options[:height]   = options[:height]  unless options[:height].nil?
+      ckeditor_options[:language] = options.delete(:language) || I18n.locale.to_s
+      ckeditor_options[:toolbar]  = options.delete(:toolbar) unless options[:toolbar].nil?
+      ckeditor_options[:skin]     = options.delete(:skin)    unless options[:skin].nil?
+      ckeditor_options[:width]    = width if width
+      ckeditor_options[:height]   = height if height
       
-      ckeditor_options[:swf_params] = options[:swf_params] unless options[:swf_params].nil?
+      ckeditor_options[:swf_params] = options.delete(:swf_params) if options[:swf_params]
       
       ckeditor_options[:filebrowserBrowseUrl] = Ckeditor.file_manager_uri
       ckeditor_options[:filebrowserUploadUrl] = Ckeditor.file_manager_upload_uri
@@ -52,9 +52,9 @@ module Ckeditor
       
       output_buffer = ActiveSupport::SafeBuffer.new
       
-      textarea_options.update(:style => "width:#{width};height:#{height}")
+      textarea_options.update(:style => "width:#{width || '100%'};height:#{height || '100%'}")
         
-      output_buffer << ActionView::Base::InstanceTag.new(object, field, self, var).to_text_area_tag(textarea_options)
+      output_buffer << ActionView::Base::InstanceTag.new(object, field, self, var).to_text_area_tag(textarea_options.merge(options))
       
       output_buffer << javascript_tag("CKEDITOR.replace('#{element_id}', { 
           #{ckeditor_applay_options(ckeditor_options)}
@@ -75,8 +75,8 @@ module Ckeditor
     
     protected
       
-      def ckeditor_element_id(object, field)
-        "#{object}_#{field}_editor"
+      def ckeditor_element_id(object, field, index=nil)
+        index.nil? ? "#{object}_#{field}_editor" : "#{object}_#{index}_#{field}_editor"
       end
       
       def ckeditor_applay_options(options={})
