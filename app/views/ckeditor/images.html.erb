@@ -1,16 +1,16 @@
-<script type="text/javascript">	  
-  var upload_path = "<%= ckeditor_attachment_path(:image) %>";
-  
-  function setUrl(url) 
-  {  
+<script type="text/javascript">
+  var upload_path = "/ckeditor/create/image<%= raw ckeditor_attachment_path(:image) %>";
+
+  function setUrl(url)
+  {
     CKEDITOR.tools.callFunction(CKEditorFuncNum, url);
     window.close();
   }
-  
+
   function uploadButton(button)
   {
     var element = $('fj');
-    
+
     if (element.style.display == '')
     {
       element.style.display = 'none';
@@ -20,22 +20,22 @@
       element.style.display = '';
     }
   }
-  
+
   window.onload = function()
   {
     init_swfupload();
     var f = new FileThumb('qu');
     var t = new ToolBar('nv');
-    
+
     var b1 = new Button('Upload New File', 'Upload', 'add.gif');
     var b2 = new Button('Refresh', 'Refresh', 'refresh.gif');
-    
+
     b1.callback = uploadButton;
     b2.callback = function(){ window.location.reload(); }
-    
+
     t.buttons.push(b1);
     t.buttons.push(b2);
-    
+
     t.init();
   }
 </script>
@@ -58,7 +58,7 @@
 						<td>
               <span id='spanButtonPlaceholder'></span>
               <div id="divFileProgressContainer" style="clear:both;"></div>
-              
+
 							<%= render :partial=>"swfupload" %>
 						</td>
 					</tr>
@@ -89,3 +89,4 @@
 	</tr>
 </tbody>
 </table>
+
