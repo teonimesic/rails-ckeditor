@@ -1,3 +1,5 @@
+require_relative 'middleware'
+
 module Ckeditor
   class Engine < ::Rails::Engine
     initializer "ckeditor_engine.add_middleware" do |app|
