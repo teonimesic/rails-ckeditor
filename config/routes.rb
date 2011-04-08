@@ -1,5 +1,9 @@
-Rails.application.routes.draw do |map|
-  match 'ckeditor/images', :to => 'ckeditor#images'
-  match 'ckeditor/files',  :to => 'ckeditor#files'
-  match 'ckeditor/create/:kind', :to => 'ckeditor#create'
+Rails.application.routes.draw do
+  namespace :ckeditor do
+    resources :pictures, :only => [:index, :create, :destroy]
+    resources :attachment_files, :only => [:index, :create, :destroy]
+
+    match "/ckeditor/attachments/file" => "ckeditor/attachment_files#create"
+    match "/ckeditor/attachments/image" => "ckeditor/pictures#create"
+  end
 end

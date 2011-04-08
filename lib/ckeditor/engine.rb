@@ -1,11 +1,9 @@
-require_relative 'middleware'
-
 module Ckeditor
   class Engine < ::Rails::Engine
     initializer "ckeditor_engine.add_middleware" do |app|
       app.middleware.insert_before(
         ActionDispatch::Cookies,
-        Ckeditor::Middleware,
+        "Ckeditor::Middleware",
         app.config.send(:session_options)[:key])
     end
 
@@ -16,7 +14,11 @@ module Ckeditor
       ActionView::Helpers::AssetTagHelper.register_javascript_expansion :ckeditor => ["ckeditor/ckeditor"]
       
       if Object.const_defined?("Formtastic")
-        Formtastic::SemanticFormHelper.builder = Ckeditor::CustomFormBuilder
+        ::Formtastic::SemanticFormBuilder.send :include, Ckeditor::Hooks::FormtasticBuilder
+      end
+      
+      if Object.const_defined?("SimpleForm")
+        ::SimpleForm::FormBuilder.send :include, Ckeditor::Hooks::SimpleFormBuilder
       end
     end
   end

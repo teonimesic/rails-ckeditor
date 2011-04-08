@@ -7,15 +7,15 @@ module Ckeditor
     #
     # Two forms on one page:
     # <%= form_tag "one" %>
-    #   <%= ckeditor_textarea("object", "field", :id => "demo1") %>
+    #   <%= ckeditor_textarea("object", "field", :index => "1") %>
     # <% end %>
     # ...
     # <%= form_tag "two" %>
-    #   <%= ckeditor_textarea("object", "field", :id => "demo2") %>
+    #   <%= ckeditor_textarea("object", "field", :index => "2") %>
     # <% end %>
     #
     def ckeditor_textarea(object, field, options = {})
-      options.symbolize_keys!
+      options = options.dup.symbolize_keys
       
       var = options.delete(:object) if options.key?(:object)
       var ||= @template.instance_variable_get("@#{object}")
@@ -23,24 +23,21 @@ module Ckeditor
       value = var.send(field.to_sym) if var
       value ||= options.delete(:value) || ""
       
-      element_id = options.delete(:id) || ckeditor_element_id(object, field, options[:index])
+      element_id = options.delete(:id) || ckeditor_element_id(object, field, options.delete(:index))
+      width  = options.delete(:width) || '100%'
+      height = options.delete(:height) || '100%'
       
       textarea_options = { :id => element_id }
       
-      textarea_options[:cols] = (options.delete(:cols) || 70).to_i
-      textarea_options[:rows] = (options.delete(:rows) || 20).to_i
-      textarea_options[:class] = options.delete(:class) if options[:class]
-
-      width = options.delete(:width)
-      height = options.delete(:height)
+      textarea_options[:cols]  = (options.delete(:cols) || 70).to_i
+      textarea_options[:rows]  = (options.delete(:rows) || 20).to_i
+      textarea_options[:class] = (options.delete(:class) || 'editor').to_s
+      textarea_options[:style] = "width:#{width};height:#{height}"
       
-      ckeditor_options = {}
-      
-      ckeditor_options[:language] = options.delete(:language) || I18n.locale.to_s
-      ckeditor_options[:toolbar]  = options.delete(:toolbar) unless options[:toolbar].nil?
-      ckeditor_options[:skin]     = options.delete(:skin)    unless options[:skin].nil?
-      ckeditor_options[:width]    = width if width
-      ckeditor_options[:height]   = height if height
+      ckeditor_options = {:width => width, :height => height }
+      ckeditor_options[:language] = (options.delete(:language) || I18n.locale).to_s
+      ckeditor_options[:toolbar]  = options.delete(:toolbar) if options[:toolbar]
+      ckeditor_options[:skin]     = options.delete(:skin) if options[:skin]
       
       ckeditor_options[:swf_params] = options.delete(:swf_params) if options[:swf_params]
       
@@ -51,14 +48,47 @@ module Ckeditor
       ckeditor_options[:filebrowserImageUploadUrl] = Ckeditor.file_manager_image_upload_uri
       
       output_buffer = ActiveSupport::SafeBuffer.new
-      
-      textarea_options.update(:style => "width:#{width || '100%'};height:#{height || '100%'}")
         
       output_buffer << ActionView::Base::InstanceTag.new(object, field, self, var).to_text_area_tag(textarea_options.merge(options))
       
-      output_buffer << javascript_tag("CKEDITOR.replace('#{element_id}', { 
-          #{ckeditor_applay_options(ckeditor_options)}
-        });\n")
+      output_buffer << javascript_tag(%@
+        $("##{element_id}").ckeditor(wait_and_add_swf_params, { #{ckeditor_applay_options(ckeditor_options)} });
+
+        function wait_and_add_swf_params(){
+          $("#cke_40, #cke_43, #cke_45").live("click", wait_for_upload_popup);
+        }
+
+        function wait_for_upload_popup(){
+          wait_for( ".cke_dialog_ui_file", wait_for_iframe, 200);
+        }
+
+        function wait_for(element, func, timeout){
+          setTimeout(function(){
+            if( $(element).length == 0 )
+              wait_for(element, func, timeout);
+            else
+              func();
+          }, timeout);
+        }
+
+        function wait_for_iframe(){
+          wait_for( "iframe.cke_dialog_ui_input_file", add_swf_params, 200);
+        }
+
+        function add_swf_params(){
+          $.each(#{ckeditor_options[:swf_params].to_json}, function(key, value){
+            append_to_form(input_hidden(key, value));
+          });
+        }
+
+        function append_to_form(html_string){
+          $("iframe.cke_dialog_ui_input_file").contents().find('form').append( $(html_string) );
+        }
+
+        function input_hidden(key, value){
+          return "<input type='hidden' name='"+ key +"' value='"+ value +"' />"
+        }
+      @)
         
       output_buffer
     end
@@ -75,8 +105,8 @@ module Ckeditor
     
     protected
       
-      def ckeditor_element_id(object, field, index=nil)
-        index.nil? ? "#{object}_#{field}_editor" : "#{object}_#{index}_#{field}_editor"
+      def ckeditor_element_id(object, field, index = nil)
+        index.blank? ? "#{object}_#{field}_editor" : "#{object}_#{index}_#{field}_editor"
       end
       
       def ckeditor_applay_options(options={})
