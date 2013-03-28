@@ -59,31 +59,33 @@ module Ckeditor
   # Get the image class from the image reference object.
   def self.image_model
     if self.class_variables.include?('@@image_model_ref')
-      @@image_model_ref.get 
+      @@image_model_ref.get @@image_class_name
     else
       self.file_manager_image_model = "Ckeditor::Picture"
-      @@image_model_ref.get
+      @@image_model_ref.get @@image_class_name
     end
   end
   
   # Set the image model reference object to access the images.
-  def self.file_manager_image_model=(class_name)
-    @@image_model_ref = ActiveSupport::Dependencies.ref(class_name)
+  def self.file_manager_image_model=(image_class_name)
+    @@image_class_name = image_class_name
+    @@image_model_ref = ActiveSupport::Dependencies.reference(@@image_class_name)
   end
   
   # Get the file class from the file reference object.
   def self.file_model
     if self.class_variables.include?('@@file_model_ref')
-      @@file_model_ref.get 
+      @@file_model_ref.get @@file_class_name
     else
       self.file_manager_file_model = "Ckeditor::AttachmentFile"
-      @@file_model_ref.get
+      @@file_model_ref.get @@file_class_name
     end
   end
   
   # Set the file model reference object to access the files.
-  def self.file_manager_file_model=(class_name)
-    @@file_model_ref = ActiveSupport::Dependencies.ref(class_name)
+  def self.file_manager_file_model=(file_class_name)
+    @@file_class_name = file_class_name
+    @@file_model_ref = ActiveSupport::Dependencies.reference(file_class_name)
   end
   
   # Default way to setup Ckeditor. Run rails generate ckeditor to create

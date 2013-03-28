@@ -9,15 +9,15 @@
 
   function uploadButton(button)
   {
-    var element = $('fj');
-
-    if (element.style.display == '')
+    var element = $('#fj');
+    
+    if (element.css("display") == 'none')
     {
-      element.style.display = 'none';
+      element.css("display", '');
     }
     else
     {
-      element.style.display = '';
+      element.css("display", 'none');
     }
   }
 
